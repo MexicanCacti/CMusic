@@ -1,6 +1,3 @@
-Requirements
-- OpenAL
-
 To compile:
 - Navigate to source directory
 - call the following...
