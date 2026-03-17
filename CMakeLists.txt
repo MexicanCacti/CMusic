@@ -33,8 +33,15 @@ add_subdirectory(
         third_party/sqlite
 )
 
+file(GLOB_RECURSE SOURCES
+        ./src/*.cpp
+        ./src/*.hpp
+        ./src/*.h
+        ./src/*.c
+)
+
 add_executable(CMusic
-        src/main.cpp
+        ${SOURCES}
 )
 
 # Links libraries to executable
