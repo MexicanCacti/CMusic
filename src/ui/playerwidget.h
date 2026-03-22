@@ -19,6 +19,7 @@
 #include <QLabel>
 
 #include "../visualizer/visualizerwidget.h"
+#include "../audio/playbackcontroller.h"
 
 class PlayerWidget : public QWidget
 {
@@ -28,17 +29,18 @@ public:
     explicit PlayerWidget(QWidget *parent = nullptr);
 
 private slots:
-    void togglePlayPause();
     void updateDateTime();
-    void previousSong();
-    void nextSong();
-    void setVolume(int value);
-    void tickPlayback();
+    void onPlayingChanged(bool playing);
+    void onCurrentSongChanged(const QString &songTitle);
+    void onCurrentTimeChanged(int seconds);
+    void onVolumeChanged(int value);
+
 
 private:
     void buildUi();
-    void connectSignals();
-    void updateTrackDisplay();
+    void connectUi();
+    void connectController();
+    void updateTrackDisplay(int seconds);
 
 
     QPushButton *playButton;
@@ -53,11 +55,7 @@ private:
     QSlider *volumeSlider;
 
     QTimer *clockTimer;
-    QTimer *playbackTimer;
-
-    bool isPlaying;
-    int currentSeconds;
-    int trackLengthSeconds;
+    PlaybackController *playbackController;
 };
 
 #endif // PLAYERWIDGET_H

@@ -11,22 +11,20 @@ PlayerWidget::PlayerWidget(QWidget *parent)
     playTime(nullptr),
     volumeSlider(nullptr),
     clockTimer(new QTimer(this)),
-    playbackTimer(new QTimer(this)),
-    isPlaying(false),
-    currentSeconds(0),
-    trackLengthSeconds(245)
+    playbackController(new PlaybackController(this))
 {
     buildUi();
-    connectSignals();
+    connectUi();
+    connectController();
 
-    currentSong->setText("Current Song: None");
     currentDateTime->setDateTime(QDateTime::currentDateTime());
-    volumeSlider->setValue(50);
 
-    updateTrackDisplay();
+    onPlayingChanged(playbackController->getIsPlaying());
+    onCurrentSongChanged(playbackController->currentSong());
+    onCurrentTimeChanged(playbackController->getCurrentPositionSeconds());
+    onVolumeChanged(playbackController->getVolume());
 
-    clockTimer->start(1000);
-    playbackTimer->start(1000);
+    volumeSlider->setValue(playbackController->getVolume());
 
 }
 
@@ -37,7 +35,9 @@ void PlayerWidget::buildUi()
     prevButton = new QPushButton("Prev", this);
     nextButton = new QPushButton("Next", this);
 
-    currentSong = new QLabel("None", this);
+    currentSong = new QLabel(this);
+    currentSong->setText("Current Song: None");
+    currentSong->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
     currentDateTime = new QDateTimeEdit(this);
     currentDateTime->setReadOnly(true);
@@ -73,27 +73,30 @@ void PlayerWidget::buildUi()
     resize(700, 320);
 }
 
-void PlayerWidget::connectSignals()
+void PlayerWidget::connectUi()
 {
     connect(playButton, &QPushButton::clicked,
-            this, &PlayerWidget::togglePlayPause);
+            playbackController, &PlaybackController::togglePlayPause);
     connect(prevButton, &QPushButton::clicked,
-            this, &PlayerWidget::previousSong);
+            playbackController, &PlaybackController::prev);
     connect(nextButton, &QPushButton::clicked,
-            this, &PlayerWidget::nextSong);
+            playbackController, &PlaybackController::next);
     connect(volumeSlider, &QSlider::valueChanged,
-            this, &PlayerWidget::setVolume);
+            playbackController, &PlaybackController::setVolume);
     connect(clockTimer, &QTimer::timeout,
             this, &PlayerWidget::updateDateTime);
-    connect(playbackTimer, &QTimer::timeout,
-            this, &PlayerWidget::tickPlayback);
 }
 
-void PlayerWidget::togglePlayPause()
+void PlayerWidget::connectController()
 {
-    isPlaying = !isPlaying;
-    playButton->setText(isPlaying ? "Pause" : "Play");
-    visualizer->setPlaying(isPlaying);
+    connect(playbackController, &PlaybackController::playingChanged,
+            this, &PlayerWidget::onPlayingChanged);
+    connect(playbackController, &PlaybackController::currentSongChanged,
+            this, &PlayerWidget::onCurrentSongChanged);
+    connect(playbackController, &PlaybackController::songTimePositionChanged,
+            this, &PlayerWidget::onCurrentTimeChanged);
+    connect(playbackController, &PlaybackController::volumeChanged,
+            this, &PlayerWidget::onVolumeChanged);
 }
 
 void PlayerWidget::updateDateTime()
@@ -101,48 +104,36 @@ void PlayerWidget::updateDateTime()
     currentDateTime->setDateTime(QDateTime::currentDateTime());
 }
 
-void PlayerWidget::previousSong()
+void PlayerWidget::onPlayingChanged(bool playing)
 {
-    currentSong = new QLabel("PrevSong", this);
-    currentSeconds = 0;
-    updateTrackDisplay();
+    playButton->setText(playing ? "Pause" : "Play");
+    visualizer->setPlaying(playing);
 }
 
-void PlayerWidget::nextSong()
+void PlayerWidget::onCurrentSongChanged(const QString &songTitle)
 {
-    currentSong = new QLabel("NextSong", this);
-    currentSeconds = 0;
-    updateTrackDisplay();
+    currentSong->setText("Current Song: " + songTitle);
 }
 
-void PlayerWidget::setVolume(int value)
+void PlayerWidget::onCurrentTimeChanged(int seconds)
 {
-    // Note: Add volume playback change here too
+    updateTrackDisplay(seconds);
+}
+
+void PlayerWidget::onVolumeChanged(int value)
+{
     visualizer->setLevel(value);
+    if(volumeSlider->value() != value){
+        volumeSlider->setValue(value);
+    }
 }
 
-void PlayerWidget::tickPlayback()
+void PlayerWidget::updateTrackDisplay(int seconds)
 {
-    if(!isPlaying){
-        return;
-    }
-
-    if(++currentSeconds > trackLengthSeconds){
-        currentSeconds = 0;
-        nextSong();
-        return;
-    }
-
-
-    updateTrackDisplay();
-}
-
-void PlayerWidget::updateTrackDisplay()
-{
-    const int min = currentSeconds / 60;
-    const int sec = currentSeconds % 60;
+    const int minutes = seconds / 60;
+    const int secs = seconds % 60;
 
     playTime->display(QString("%1:%2")
-                          .arg(min, 2, 10, QChar('0'))
-                          .arg(sec, 2, 10, QChar('0')));
+                          .arg(minutes, 2, 10, QChar('0'))
+                          .arg(secs, 2, 10, QChar('0')));
 }
