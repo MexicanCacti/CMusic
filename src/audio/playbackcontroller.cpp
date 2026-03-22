@@ -3,35 +3,78 @@
 
 PlaybackController::PlaybackController(QObject *parent)
     : QObject(parent),
-    playlist({"Song 1", "Song 2", "Song 3"}),
-    currentSongIndex(0),
-    isPlaying(false),
-    positionSeconds(0),
-    durationSeconds(245),
+    audioEngine(new AudioEngine(this)),
+    currentSong(),
+    currentSeconds(0),
+    trackLengthSeconds(0),
     volume(60)
 {
-    connect(&timer, &QTimer::timeout, this, &PlaybackController::tick);
-    timer.start(1000);
+    connect(audioEngine, &AudioEngine::playingChanged,
+            this, &PlaybackController::playingChanged);
+
+    connect(audioEngine, &AudioEngine::positionChanged,
+            this, [this](qint64 positionMs)
+            {
+                const int seconds = static_cast<int>(positionMs / 1000);
+
+                if (currentSeconds == seconds) {
+                    return;
+                }
+
+                currentSeconds = seconds;
+                emit songTimePositionChanged(currentSeconds);
+            });
+
+    connect(audioEngine, &AudioEngine::durationChanged,
+            this, [this](qint64 durationMs)
+            {
+                const int seconds = static_cast<int>(durationMs / 1000);
+
+                if (trackLengthSeconds == seconds) {
+                    return;
+                }
+
+                trackLengthSeconds = seconds;
+                emit durationChanged(trackLengthSeconds);
+            });
+
+    connect(audioEngine, &AudioEngine::sourceChanged,
+            this, [this](const QString &filePath)
+            {
+                QFileInfo fileInfo(filePath);
+                currentSong = fileInfo.completeBaseName().isEmpty()
+                                    ? fileInfo.fileName()
+                                    : fileInfo.completeBaseName();
+
+                currentSeconds = 0;
+                emit currentSongChanged(currentSong);
+                emit songTimePositionChanged(currentSeconds);
+            });
+
+    connect(audioEngine, &AudioEngine::errorOccurred,
+            this, &::PlaybackController::errorOccured);
+
+    audioEngine->setVolume(volume);
 }
 
 bool PlaybackController::getIsPlaying() const
 {
-    return isPlaying;
+    return audioEngine->getIsPlaying();
 }
 
-QString PlaybackController::currentSong() const
+QString PlaybackController::getCurrentSong() const
 {
-    return playlist.value(currentSongIndex);
+    return currentSong;
 }
 
 int PlaybackController::getCurrentPositionSeconds() const
 {
-    return positionSeconds;
+    return currentSeconds;
 }
 
 int PlaybackController::getDurationSeconds() const
 {
-    return durationSeconds;
+    return trackLengthSeconds;
 }
 
 int PlaybackController::getVolume() const
@@ -39,84 +82,60 @@ int PlaybackController::getVolume() const
     return volume;
 }
 
-void PlaybackController::play()
+void PlaybackController::loadFile(const QString &filePath)
 {
-    if (isPlaying) {
-        return;
-    }
+    if(filePath.isEmpty()) return;
 
-    isPlaying = true;
-    emit playingChanged(isPlaying);
-}
+    audioEngine->loadFile(filePath);
 
-void PlaybackController::pause()
-{
-    if (!isPlaying) {
-        return;
-    }
+    QFileInfo fileInfo(filePath);
+    currentSong = fileInfo.completeBaseName().isEmpty()
+                        ? fileInfo.fileName()
+                        : fileInfo.completeBaseName();
 
-    isPlaying = false;
-    emit playingChanged(isPlaying);
+    currentSeconds = 0;
+    trackLengthSeconds = 0;
+
+    emit currentSongChanged(currentSong);
+    emit songTimePositionChanged(currentSeconds);
+    emit durationChanged(trackLengthSeconds);
 }
 
 void PlaybackController::togglePlayPause()
 {
-    isPlaying ? pause() : play();
+    if(audioEngine->getSourceFile().isEmpty()) return;
+
+    audioEngine->getIsPlaying() ? audioEngine->pause() : audioEngine->play();
 }
 
 void PlaybackController::next()
 {
-    currentSongIndex = (currentSongIndex + 1) % playlist.size();
-    positionSeconds = 0;
-    emit currentSongChanged(currentSong());
-    emit songTimePositionChanged(positionSeconds);
+    // placeholder
 }
 
 void PlaybackController::prev()
 {
-    currentSongIndex = (currentSongIndex - 1 + playlist.size()) % playlist.size();
-    positionSeconds = 0;
-    emit currentSongChanged(currentSong());
-    emit songTimePositionChanged(positionSeconds);
+    // placeholder
 }
 
 void PlaybackController::setVolume(int value)
 {
+    value = qBound(0, value, 100);
+
     if (volume == value) {
         return;
     }
 
     volume = value;
+    audioEngine->setVolume(volume);
     emit volumeChanged(volume);
 }
 
-void PlaybackController::setTimeSec(int seconds)
+void PlaybackController::seekToSeconds(int seconds)
 {
-    if (seconds < 0) {
-        seconds = 0;
-    }
-    if (seconds > durationSeconds) {
-        seconds = durationSeconds;
-    }
+    if(seconds < 0) seconds = 0;
 
-    if (positionSeconds == seconds) {
-        return;
-    }
+    if(trackLengthSeconds > 0 && seconds > trackLengthSeconds) seconds = trackLengthSeconds;
 
-    positionSeconds = seconds;
-    emit songTimePositionChanged(positionSeconds);
-}
-
-void PlaybackController::tick()
-{
-    if (!isPlaying) {
-        return;
-    }
-
-    if (++positionSeconds > durationSeconds) {
-        next();
-        return;
-    }
-
-    emit songTimePositionChanged(positionSeconds);
+    audioEngine->setSongPosition(static_cast<qint64>(seconds) * 1000);
 }

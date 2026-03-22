@@ -2,6 +2,7 @@
 
 PlayerWidget::PlayerWidget(QWidget *parent)
     : QWidget(parent),
+    loadButton(nullptr),
     playButton(nullptr),
     prevButton(nullptr),
     nextButton(nullptr),
@@ -10,6 +11,7 @@ PlayerWidget::PlayerWidget(QWidget *parent)
     visualizer(nullptr),
     playTime(nullptr),
     volumeSlider(nullptr),
+    playbackSlider(nullptr),
     clockTimer(new QTimer(this)),
     playbackController(new PlaybackController(this))
 {
@@ -20,10 +22,11 @@ PlayerWidget::PlayerWidget(QWidget *parent)
     currentDateTime->setDateTime(QDateTime::currentDateTime());
 
     onPlayingChanged(playbackController->getIsPlaying());
-    onCurrentSongChanged(playbackController->currentSong());
+    onCurrentSongChanged(playbackController->getCurrentSong());
     onCurrentTimeChanged(playbackController->getCurrentPositionSeconds());
     onVolumeChanged(playbackController->getVolume());
 
+    playbackSlider->setValue(playbackController->getCurrentPositionSeconds());
     volumeSlider->setValue(playbackController->getVolume());
 
 }
@@ -31,6 +34,7 @@ PlayerWidget::PlayerWidget(QWidget *parent)
 
 void PlayerWidget::buildUi()
 {
+    loadButton = new QPushButton("Load", this);
     playButton = new QPushButton("Play", this);
     prevButton = new QPushButton("Prev", this);
     nextButton = new QPushButton("Next", this);
@@ -42,6 +46,7 @@ void PlayerWidget::buildUi()
     currentDateTime = new QDateTimeEdit(this);
     currentDateTime->setReadOnly(true);
     currentDateTime->setDisplayFormat("ddd MMM d yyyy  hh:mm:ss AP");
+    currentSong->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     visualizer = new VisualizerWidget(this);
 
@@ -52,21 +57,27 @@ void PlayerWidget::buildUi()
     volumeSlider = new QSlider(Qt::Horizontal, this);
     volumeSlider->setRange(0, 100);
 
+    playbackSlider = new QSlider(Qt::Horizontal, this);
+    playbackSlider->setRange(0, 0);
+    playbackSlider->toolTip();
+
     auto *mainLayout = new QGridLayout(this);
     mainLayout->setContentsMargins(16, 16, 16, 16);
     mainLayout->setHorizontalSpacing(12);
     mainLayout->setVerticalSpacing(12);
 
-    mainLayout->addWidget(playButton,      0, 0);
-    mainLayout->addWidget(currentSong,     0, 1);
-    mainLayout->addWidget(currentDateTime, 0, 2);
+    mainLayout->addWidget(loadButton,      0, 0);
+    mainLayout->addWidget(playButton,      0, 1);
+    mainLayout->addWidget(currentSong,     0, 2);
+    mainLayout->addWidget(currentDateTime, 0, 3);
 
-    mainLayout->addWidget(visualizer,      1, 0, 1, 3);
-    mainLayout->addWidget(playTime,        2, 1);
+    mainLayout->addWidget(visualizer,      1, 0, 2, 4);
+    mainLayout->addWidget(playbackSlider,  3, 0, 1, 4);
+    mainLayout->addWidget(playTime,        4, 1, 1, 2);
 
-    mainLayout->addWidget(prevButton,      3, 0);
-    mainLayout->addWidget(volumeSlider,    3, 1);
-    mainLayout->addWidget(nextButton,      3, 2);
+    mainLayout->addWidget(prevButton,      5, 0);
+    mainLayout->addWidget(volumeSlider,    5, 1, 1, 2);
+    mainLayout->addWidget(nextButton,      5, 3);
 
     setLayout(mainLayout);
     setWindowTitle("CMusic");
@@ -75,6 +86,8 @@ void PlayerWidget::buildUi()
 
 void PlayerWidget::connectUi()
 {
+    connect(loadButton, &QPushButton::clicked,
+            this, &PlayerWidget::openFileDialog);
     connect(playButton, &QPushButton::clicked,
             playbackController, &PlaybackController::togglePlayPause);
     connect(prevButton, &QPushButton::clicked,
@@ -83,6 +96,13 @@ void PlayerWidget::connectUi()
             playbackController, &PlaybackController::next);
     connect(volumeSlider, &QSlider::valueChanged,
             playbackController, &PlaybackController::setVolume);
+    connect(playbackSlider, &QSlider::sliderMoved,
+            playbackController, &PlaybackController::seekToSeconds);
+    connect(playbackSlider, &QSlider::sliderReleased,
+            this, [this]()
+            {
+                playbackController->seekToSeconds(playbackSlider->value());
+            });
     connect(clockTimer, &QTimer::timeout,
             this, &PlayerWidget::updateDateTime);
 }
@@ -95,6 +115,8 @@ void PlayerWidget::connectController()
             this, &PlayerWidget::onCurrentSongChanged);
     connect(playbackController, &PlaybackController::songTimePositionChanged,
             this, &PlayerWidget::onCurrentTimeChanged);
+    connect(playbackController, &PlaybackController::durationChanged,
+            this, &::PlayerWidget::onDurationChanged);
     connect(playbackController, &PlaybackController::volumeChanged,
             this, &PlayerWidget::onVolumeChanged);
 }
@@ -118,6 +140,15 @@ void PlayerWidget::onCurrentSongChanged(const QString &songTitle)
 void PlayerWidget::onCurrentTimeChanged(int seconds)
 {
     updateTrackDisplay(seconds);
+
+    if(!playbackSlider->isSliderDown() && playbackSlider->value() != seconds){
+        playbackSlider->setValue(seconds);
+    }
+}
+
+void PlayerWidget::onDurationChanged(int seconds)
+{
+    playbackSlider->setRange(0, seconds > 0 ? seconds : 0);
 }
 
 void PlayerWidget::onVolumeChanged(int value)
@@ -136,4 +167,17 @@ void PlayerWidget::updateTrackDisplay(int seconds)
     playTime->display(QString("%1:%2")
                           .arg(minutes, 2, 10, QChar('0'))
                           .arg(secs, 2, 10, QChar('0')));
+
+}
+
+void PlayerWidget::openFileDialog()
+{
+    const QString filePath = QFileDialog::getOpenFileName(
+        this,
+        tr("Open Audio File"),
+        QString(),
+        tr("Audio Files (*.mp3 *.wav *.flac *.ogg *.m4a *.acc);;All Files(*)")
+        );
+
+    playbackController->loadFile(filePath);
 }

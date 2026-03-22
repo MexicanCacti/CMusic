@@ -3,6 +3,9 @@
 #include <QObject>
 #include <QStringList>
 #include <QTimer>
+#include <QFileInfo>
+
+#include "../audio/audioengine.h"
 
 class PlaybackController : public QObject
 {
@@ -12,20 +15,18 @@ public:
     explicit PlaybackController(QObject* parent = nullptr);
 
     bool getIsPlaying() const;
-    QString currentSong() const;
+    QString getCurrentSong() const;
     int getCurrentPositionSeconds() const;
     int getDurationSeconds() const;
     int getVolume() const;
 
 public slots:
-    void play();
-    void pause();
     void togglePlayPause();
+    void loadFile(const QString&filePath);
     void next();
     void prev();
-    void setVolume(int val);
-    void setTimeSec(int sec);
-    void tick();
+    void setVolume(int value);
+    void seekToSeconds(int seconds);
 
 signals:
     void playingChanged(bool playing);
@@ -33,15 +34,14 @@ signals:
     void songTimePositionChanged(int sec);
     void durationChanged(int sec);
     void volumeChanged(int volume);
+    void errorOccured(const QString& message);
 
 private:
-    QStringList playlist;
-    int currentSongIndex;
-    bool isPlaying;
-    int positionSeconds;
-    int durationSeconds;
+    AudioEngine *audioEngine;
+    QString currentSong;
+    int currentSeconds;
+    int trackLengthSeconds;
     int volume;
-    QTimer timer;
 
 };
 

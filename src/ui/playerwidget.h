@@ -3,9 +3,7 @@
 
 #include <QWidget>
 #include <QPushButton>
-#include <QLineEdit>
 #include <QDateTimeEdit>
-#include <QGraphicsView>
 #include <QLCDNumber>
 #include <QSlider>
 #include <QGridLayout>
@@ -17,6 +15,7 @@
 #include <QDateTime>
 #include <QRandomGenerator>
 #include <QLabel>
+#include <QFileDialog>
 
 #include "../visualizer/visualizerwidget.h"
 #include "../audio/playbackcontroller.h"
@@ -33,7 +32,9 @@ private slots:
     void onPlayingChanged(bool playing);
     void onCurrentSongChanged(const QString &songTitle);
     void onCurrentTimeChanged(int seconds);
+    void onDurationChanged(int seconds);
     void onVolumeChanged(int value);
+    void openFileDialog();
 
 
 private:
@@ -42,7 +43,7 @@ private:
     void connectController();
     void updateTrackDisplay(int seconds);
 
-
+    QPushButton *loadButton;
     QPushButton *playButton;
     QPushButton *prevButton;
     QPushButton *nextButton;
@@ -52,6 +53,7 @@ private:
 
     VisualizerWidget *visualizer;
     QLCDNumber *playTime;
+    QSlider *playbackSlider;
     QSlider *volumeSlider;
 
     QTimer *clockTimer;
