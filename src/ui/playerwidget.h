@@ -18,6 +18,8 @@
 #include <QRandomGenerator>
 #include <QLabel>
 
+#include "../visualizer/visualizerwidget.h"
+
 class PlayerWidget : public QWidget
 {
     Q_OBJECT
@@ -36,7 +38,6 @@ private slots:
 private:
     void buildUi();
     void connectSignals();
-    void updateVisualizer();
     void updateTrackDisplay();
 
 
@@ -46,7 +47,8 @@ private:
 
     QLabel *currentSong;
     QDateTimeEdit *currentDateTime;
-    QGraphicsView *visualizer;
+
+    VisualizerWidget *visualizer;
     QLCDNumber *playTime;
     QSlider *volumeSlider;
 
@@ -56,7 +58,6 @@ private:
     bool isPlaying;
     int currentSeconds;
     int trackLengthSeconds;
-    int playbackTickCount;
 };
 
 #endif // PLAYERWIDGET_H

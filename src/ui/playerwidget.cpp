@@ -14,8 +14,7 @@ PlayerWidget::PlayerWidget(QWidget *parent)
     playbackTimer(new QTimer(this)),
     isPlaying(false),
     currentSeconds(0),
-    trackLengthSeconds(245),
-    playbackTickCount(0)
+    trackLengthSeconds(245)
 {
     buildUi();
     connectSignals();
@@ -25,10 +24,9 @@ PlayerWidget::PlayerWidget(QWidget *parent)
     volumeSlider->setValue(50);
 
     updateTrackDisplay();
-    updateVisualizer();
 
     clockTimer->start(1000);
-    playbackTimer->start(250);
+    playbackTimer->start(1000);
 
 }
 
@@ -45,9 +43,7 @@ void PlayerWidget::buildUi()
     currentDateTime->setReadOnly(true);
     currentDateTime->setDisplayFormat("ddd MMM d yyyy  hh:mm:ss AP");
 
-    visualizer = new QGraphicsView(this);
-    visualizer->setMinimumHeight(140);
-    visualizer->setScene(new QGraphicsScene(visualizer));
+    visualizer = new VisualizerWidget(this);
 
     playTime = new QLCDNumber(this);
     playTime->setDigitCount(5);
@@ -97,6 +93,7 @@ void PlayerWidget::togglePlayPause()
 {
     isPlaying = !isPlaying;
     playButton->setText(isPlaying ? "Pause" : "Play");
+    visualizer->setPlaying(isPlaying);
 }
 
 void PlayerWidget::updateDateTime()
@@ -109,7 +106,6 @@ void PlayerWidget::previousSong()
     currentSong = new QLabel("PrevSong", this);
     currentSeconds = 0;
     updateTrackDisplay();
-    updateVisualizer();
 }
 
 void PlayerWidget::nextSong()
@@ -117,12 +113,12 @@ void PlayerWidget::nextSong()
     currentSong = new QLabel("NextSong", this);
     currentSeconds = 0;
     updateTrackDisplay();
-    updateVisualizer();
 }
 
-void PlayerWidget::setVolume(int)
+void PlayerWidget::setVolume(int value)
 {
-    updateVisualizer();
+    // Note: Add volume playback change here too
+    visualizer->setLevel(value);
 }
 
 void PlayerWidget::tickPlayback()
@@ -131,16 +127,14 @@ void PlayerWidget::tickPlayback()
         return;
     }
 
-    if(++playbackTickCount % 4 == 0) {
-        if(++currentSeconds > trackLengthSeconds){
-            currentSeconds = 0;
-            nextSong();
-            return;
-        }
+    if(++currentSeconds > trackLengthSeconds){
+        currentSeconds = 0;
+        nextSong();
+        return;
     }
 
+
     updateTrackDisplay();
-    updateVisualizer();
 }
 
 void PlayerWidget::updateTrackDisplay()
@@ -151,28 +145,4 @@ void PlayerWidget::updateTrackDisplay()
     playTime->display(QString("%1:%2")
                           .arg(min, 2, 10, QChar('0'))
                           .arg(sec, 2, 10, QChar('0')));
-}
-
-void PlayerWidget::updateVisualizer()
-{
-    QGraphicsScene *scene = visualizer->scene();
-    scene->clear();
-
-    const int barCount = 20;
-    const int barWidth = 12;
-    const int spacing = 6;
-    const int maxHeight = 100;
-    const int baseY = 110;
-
-    int x = 10;
-
-    for(int i = 0 ; i < barCount; ++i){
-        int height = isPlaying
-                         ? QRandomGenerator::global()->bounded(15, maxHeight) : 10;
-
-        scene->addRect(x, baseY - height, barWidth, height);
-        x += barWidth + spacing;
-    }
-
-    scene->setSceneRect(0, 0, x + 10, 130);
 }
