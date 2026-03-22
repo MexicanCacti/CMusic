@@ -5,17 +5,6 @@ set(CMAKE_CXX_STANDARD 20)
 
 include(FetchContent)
 
-# Raylib
-set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(BUILD_GAMES OFF CACHE BOOK "" FORCE)
-
-FetchContent_Declare(
-        raylib
-        GIT_REPOSITORY https://github.com/raysan5/raylib.git
-        GIT_TAG 5.5
-)
-FetchContent_MakeAvailable(raylib)
-
 # OpenAL
 set(ALSOFT_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(ALSOFT_UTILS OFF CACHE BOOL "" FORCE)
@@ -33,20 +22,45 @@ add_subdirectory(
         third_party/sqlite
 )
 
+find_package(Qt6
+        REQUIRED COMPONENTS Core Widgets
+)
+qt_standard_project_setup()
+
 file(GLOB_RECURSE SOURCES
         ./src/*.cpp
         ./src/*.hpp
         ./src/*.h
         ./src/*.c
+        ./src/*/*.cpp
+        ./src/*/*.hpp
+        ./src/*/*.c
+        ./src/*/*.h
 )
 
-add_executable(CMusic
+qt_add_executable(CMusic
         ${SOURCES}
 )
 
 # Links libraries to executable
 target_link_libraries( CMusic PRIVATE
-        raylib
+        Qt6::Core
+        Qt6::Widgets
         sqlite3
         OpenAL
 )
+
+include(GNUInstallDirs)
+
+install(TARGETS CMusic
+        BUNDLE DESTINATION .
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+qt_generate_deploy_app_script(
+        TARGET CMusic
+        OUTPUT_SCRIPT deploy_script
+        NO_UNSUPPORTED_PLATFORM_ERROR
+)
+
+install(SCRIPT ${deploy_script})
