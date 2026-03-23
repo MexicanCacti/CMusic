@@ -1,19 +1,19 @@
-#include "playerwidget.h"
+#include "musicplayer.h"
 
-PlayerWidget::PlayerWidget(QWidget *parent)
+MusicPlayer::MusicPlayer(QWidget* parent)
     : QWidget(parent),
+    playbackController(new PlaybackController(this)),
     loadButton(nullptr),
     playButton(nullptr),
     prevButton(nullptr),
     nextButton(nullptr),
+    playbackSlider(nullptr),
+    volumeSlider(nullptr),
     currentSong(nullptr),
     currentDateTime(nullptr),
     visualizer(nullptr),
     playTime(nullptr),
-    volumeSlider(nullptr),
-    playbackSlider(nullptr),
-    clockTimer(new QTimer(this)),
-    playbackController(new PlaybackController(this))
+    clockTimer(new QTimer(this))
 {
     buildUi();
     connectUi();
@@ -23,16 +23,17 @@ PlayerWidget::PlayerWidget(QWidget *parent)
 
     onPlayingChanged(playbackController->getIsPlaying());
     onCurrentSongChanged(playbackController->getCurrentSong());
-    onCurrentTimeChanged(playbackController->getCurrentPositionSeconds());
+    onPlaybackPositionChanged(playbackController->getCurrentPositionSeconds());
+    onDurationChanged(playbackController->getDurationSeconds());
     onVolumeChanged(playbackController->getVolume());
 
     playbackSlider->setValue(playbackController->getCurrentPositionSeconds());
     volumeSlider->setValue(playbackController->getVolume());
 
+    clockTimer->start(1000);
 }
 
-
-void PlayerWidget::buildUi()
+void MusicPlayer::buildUi()
 {
     loadButton = new QPushButton("Load", this);
     playButton = new QPushButton("Play", this);
@@ -40,126 +41,152 @@ void PlayerWidget::buildUi()
     nextButton = new QPushButton("Next", this);
 
     currentSong = new QLabel(this);
-    currentSong->setText("Current Song: None");
-    currentSong->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    currentSong->setText("CurrentSong: None");
+    currentSong->setAlignment(Qt::AlignCenter | Qt::AlignVCenter);
+    currentSong->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     currentDateTime = new QDateTimeEdit(this);
     currentDateTime->setReadOnly(true);
-    currentDateTime->setDisplayFormat("ddd MMM d yyyy  hh:mm:ss AP");
-    currentSong->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    currentDateTime->setDisplayFormat("ddd MMM yy hh:mm:ss AP");
 
     visualizer = new VisualizerWidget(this);
 
     playTime = new QLCDNumber(this);
     playTime->setDigitCount(5);
-    playTime->setSegmentStyle(QLCDNumber::Flat);
+    playTime->setSegmentStyle(QLCDNumber::Outline);
 
     volumeSlider = new QSlider(Qt::Horizontal, this);
     volumeSlider->setRange(0, 100);
 
     playbackSlider = new QSlider(Qt::Horizontal, this);
     playbackSlider->setRange(0, 0);
-    playbackSlider->toolTip();
 
     auto *mainLayout = new QGridLayout(this);
     mainLayout->setContentsMargins(16, 16, 16, 16);
     mainLayout->setHorizontalSpacing(12);
     mainLayout->setVerticalSpacing(12);
 
-    mainLayout->addWidget(loadButton,      0, 0);
-    mainLayout->addWidget(playButton,      0, 1);
-    mainLayout->addWidget(currentSong,     0, 2);
-    mainLayout->addWidget(currentDateTime, 0, 3);
+    mainLayout->addWidget(loadButton,       0, 0);
+    mainLayout->addWidget(playButton,       0, 1);
+    mainLayout->addWidget(currentSong,      0, 2);
+    mainLayout->addWidget(currentDateTime,  0, 3);
 
-    mainLayout->addWidget(visualizer,      1, 0, 2, 4);
-    mainLayout->addWidget(playbackSlider,  3, 0, 1, 4);
-    mainLayout->addWidget(playTime,        4, 1, 1, 2);
+    mainLayout->addWidget(visualizer,       1, 0, 2, 4);
 
-    mainLayout->addWidget(prevButton,      5, 0);
-    mainLayout->addWidget(volumeSlider,    5, 1, 1, 2);
-    mainLayout->addWidget(nextButton,      5, 3);
+    mainLayout->addWidget(playbackSlider,   3, 0, 1, 4);
+    mainLayout->addWidget(playTime,         4, 1, 1, 2);
+
+    mainLayout->addWidget(prevButton,       5, 0);
+    mainLayout->addWidget(volumeSlider,     5, 1, 1, 2);
+    mainLayout->addWidget(nextButton,       5, 3);
 
     setLayout(mainLayout);
     setWindowTitle("CMusic");
-    resize(700, 320);
+    resize(800, 400);
 }
 
-void PlayerWidget::connectUi()
+void MusicPlayer::connectUi()
 {
     connect(loadButton, &QPushButton::clicked,
-            this, &PlayerWidget::openFileDialog);
+            this, &MusicPlayer::openFileDialog);
+
     connect(playButton, &QPushButton::clicked,
             playbackController, &PlaybackController::togglePlayPause);
+
     connect(prevButton, &QPushButton::clicked,
             playbackController, &PlaybackController::prev);
+
     connect(nextButton, &QPushButton::clicked,
             playbackController, &PlaybackController::next);
+
     connect(volumeSlider, &QSlider::valueChanged,
             playbackController, &PlaybackController::setVolume);
+
     connect(playbackSlider, &QSlider::sliderMoved,
-            playbackController, &PlaybackController::seekToSeconds);
+            this, &MusicPlayer::updateTrackDisplay);
+
     connect(playbackSlider, &QSlider::sliderReleased,
             this, [this]()
             {
-                playbackController->seekToSeconds(playbackSlider->value());
+                playbackController->seek(playbackSlider->value());
             });
+
     connect(clockTimer, &QTimer::timeout,
-            this, &PlayerWidget::updateDateTime);
+            this, &MusicPlayer::updateDateTime);
 }
 
-void PlayerWidget::connectController()
+void MusicPlayer::connectController()
 {
     connect(playbackController, &PlaybackController::playingChanged,
-            this, &PlayerWidget::onPlayingChanged);
+            this, &MusicPlayer::onPlayingChanged);
+
     connect(playbackController, &PlaybackController::currentSongChanged,
-            this, &PlayerWidget::onCurrentSongChanged);
-    connect(playbackController, &PlaybackController::songTimePositionChanged,
-            this, &PlayerWidget::onCurrentTimeChanged);
+            this, &MusicPlayer::onCurrentSongChanged);
+
+    connect(playbackController, &PlaybackController::playbackPositionChanged,
+            this, &MusicPlayer::onPlaybackPositionChanged);
+
     connect(playbackController, &PlaybackController::durationChanged,
-            this, &::PlayerWidget::onDurationChanged);
+            this, &MusicPlayer::onDurationChanged);
+
     connect(playbackController, &PlaybackController::volumeChanged,
-            this, &PlayerWidget::onVolumeChanged);
+            this, &MusicPlayer::onVolumeChanged);
+
+    connect(playbackController, &PlaybackController::errorOccurred,
+            this, &MusicPlayer::onErrorOccurred);
 }
 
-void PlayerWidget::updateDateTime()
+void MusicPlayer::updateDateTime()
 {
     currentDateTime->setDateTime(QDateTime::currentDateTime());
 }
 
-void PlayerWidget::onPlayingChanged(bool playing)
+void MusicPlayer::onPlayingChanged(bool playing)
 {
     playButton->setText(playing ? "Pause" : "Play");
     visualizer->setPlaying(playing);
 }
 
-void PlayerWidget::onCurrentSongChanged(const QString &songTitle)
+void MusicPlayer::onCurrentSongChanged(const QString &songTitle)
 {
-    currentSong->setText("Current Song: " + songTitle);
+    currentSong->setText("Current Song: " + (songTitle.isEmpty() ? QString("None") : songTitle));
 }
 
-void PlayerWidget::onCurrentTimeChanged(int seconds)
+void MusicPlayer::onPlaybackPositionChanged(int seconds)
 {
+    if(playbackSlider->isSliderDown()) return;
     updateTrackDisplay(seconds);
 
-    if(!playbackSlider->isSliderDown() && playbackSlider->value() != seconds){
+    if(playbackSlider->value() != seconds) {
+        QSignalBlocker blocker(playbackSlider);
         playbackSlider->setValue(seconds);
     }
 }
 
-void PlayerWidget::onDurationChanged(int seconds)
+void MusicPlayer::onDurationChanged(int seconds)
 {
-    playbackSlider->setRange(0, seconds > 0 ? seconds : 0);
+    const int clampedSeconds = seconds > 0 ? seconds : 0;
+
+    QSignalBlocker blocker(playbackSlider);
+    playbackSlider->setRange(0, clampedSeconds);
 }
 
-void PlayerWidget::onVolumeChanged(int value)
+void MusicPlayer::onVolumeChanged(int value)
 {
     visualizer->setLevel(value);
-    if(volumeSlider->value() != value){
+
+    if (volumeSlider->value() != value) {
+        QSignalBlocker blocker(volumeSlider);
         volumeSlider->setValue(value);
     }
 }
 
-void PlayerWidget::updateTrackDisplay(int seconds)
+void MusicPlayer::onErrorOccurred(const QString &message)
+{
+    QMessageBox::warning(this, "Playback Error", message);
+}
+
+void MusicPlayer::updateTrackDisplay(int seconds)
 {
     const int minutes = seconds / 60;
     const int secs = seconds % 60;
@@ -167,17 +194,20 @@ void PlayerWidget::updateTrackDisplay(int seconds)
     playTime->display(QString("%1:%2")
                           .arg(minutes, 2, 10, QChar('0'))
                           .arg(secs, 2, 10, QChar('0')));
-
 }
 
-void PlayerWidget::openFileDialog()
+void MusicPlayer::openFileDialog()
 {
     const QString filePath = QFileDialog::getOpenFileName(
         this,
         tr("Open Audio File"),
         QString(),
-        tr("Audio Files (*.mp3 *.wav *.flac *.ogg *.m4a *.acc);;All Files(*)")
+        tr("Audio Files (*.mp3 *.wav *.flac *.ogg *.m4a *.aac);;All Files (*)")
         );
+
+    if (filePath.isEmpty()) {
+        return;
+    }
 
     playbackController->loadFile(filePath);
 }

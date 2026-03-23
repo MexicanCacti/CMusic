@@ -14,6 +14,13 @@ class PlaybackController : public QObject
 public:
     explicit PlaybackController(QObject* parent = nullptr);
 
+    void togglePlayPause();
+    void next();
+    void prev();
+    void setVolume(int volume);
+    void seek(int seconds);
+    void loadFile(const QString& filePath);
+
     bool getIsPlaying() const;
     QString getCurrentSong() const;
     int getCurrentPositionSeconds() const;
@@ -21,27 +28,24 @@ public:
     int getVolume() const;
 
 public slots:
-    void togglePlayPause();
-    void loadFile(const QString&filePath);
-    void next();
-    void prev();
-    void setVolume(int value);
-    void seekToSeconds(int seconds);
+    void onEnginePlayingChanged(bool playing);
+    void onEnginePositionChanged(qint64 positionMs);
+    void onEngineDurationChanged(qint64 durationMs);
+    void onEngineSourceChanged(const QString& filePath);
+    void onEngineErrorOccurred(const QString& message);
 
 signals:
     void playingChanged(bool playing);
-    void currentSongChanged(const QString& song);
-    void songTimePositionChanged(int sec);
-    void durationChanged(int sec);
+    void currentSongChanged(const QString& songTitle);
+    void playbackPositionChanged(int seconds);
+    void durationChanged(int seconds);
     void volumeChanged(int volume);
-    void errorOccured(const QString& message);
+    void errorOccurred(const QString& message);
 
 private:
     AudioEngine *audioEngine;
     QString currentSong;
-    int currentSeconds;
-    int trackLengthSeconds;
-    int volume;
+    bool checkEngineStatus();
 
 };
 

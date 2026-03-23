@@ -1,5 +1,5 @@
-#ifndef PLAYERWIDGET_H
-#define PLAYERWIDGET_H
+#ifndef MUSICPLAYER_H
+#define MUSICPLAYER_H
 
 #include <QWidget>
 #include <QPushButton>
@@ -16,24 +16,27 @@
 #include <QRandomGenerator>
 #include <QLabel>
 #include <QFileDialog>
+#include <QMessageBox>
+#include <QSignalBlocker>
 
 #include "../visualizer/visualizerwidget.h"
 #include "../audio/playbackcontroller.h"
 
-class PlayerWidget : public QWidget
+class MusicPlayer : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit PlayerWidget(QWidget *parent = nullptr);
+    explicit MusicPlayer(QWidget *parent = nullptr);
 
 private slots:
     void updateDateTime();
     void onPlayingChanged(bool playing);
-    void onCurrentSongChanged(const QString &songTitle);
-    void onCurrentTimeChanged(int seconds);
+    void onCurrentSongChanged(const QString& songTitle);
+    void onPlaybackPositionChanged(int seconds);
     void onDurationChanged(int seconds);
     void onVolumeChanged(int value);
+    void onErrorOccurred(const QString &message);
     void openFileDialog();
 
 
@@ -60,4 +63,4 @@ private:
     PlaybackController *playbackController;
 };
 
-#endif // PLAYERWIDGET_H
+#endif // MUSICPLAYER_H

@@ -5,6 +5,7 @@
 #include <QUrl>
 #include <QMediaPlayer>
 #include <QAudioOutput>
+#include <QFileInfo>
 
 class AudioEngine : public QObject
 {
@@ -12,33 +13,41 @@ class AudioEngine : public QObject
 public:
     explicit AudioEngine(QObject *parent = nullptr);
 
-    void loadFile(const QString& filePath);
     void play();
     void pause();
-    void stop();
-    void setVolume(int value);
-    void setSongPosition(qint64 positionMs);
+    void setVolume(int volume);
+    void setPositionMs(qint64 positionMs);
+    void loadFile(const QString& filePath);
 
     bool getIsPlaying() const;
-    qint64 getSongPositon() const;
-    qint64 getSongDuration() const;
+    int getVolume() const;
+    qint64 getPositionMs() const;
+    qint64 getDurationMs() const;
     QString getSourceFile() const;
 
 signals:
     void playingChanged(bool playing);
     void positionChanged(qint64 positionMs);
-    void durationChanged(qint64 durationMs);
-    void sourceChanged(const QString &filePath);
-    void errorOccurred(const QString &message);
+    void durationChanged(qint64 trackLengthMs); // durationChanged()
+    void sourceChanged(const QString& filePath);
+    void errorOccurred(const QString& message);
 
 private slots:
     void handlePlaybackStateChanged();
+    void handlePositionChanged(qint64 position);
+    void handleDurationChanged(qint64 trackLength); // handleDurationChanged()
+    void handleMediaStatusChanged();
     void handleErrorChanged();
 
 private:
     QMediaPlayer *mediaPlayer;
     QAudioOutput *audioOutput;
     QString sourceFile;
+
+    bool isPlaying;
+    int volume;
+    qint64 positionMs;
+    qint64 durationMs;
 };
 
 #endif // AUDIOENGINE_H
