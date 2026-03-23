@@ -23,7 +23,7 @@ add_subdirectory(
 )
 
 find_package(Qt6
-        REQUIRED COMPONENTS Core Widgets Multimedia
+        REQUIRED COMPONENTS Core Widgets Multimedia OpenGLWidgets
 )
 qt_standard_project_setup()
 
@@ -47,6 +47,7 @@ target_link_libraries( CMusic PRIVATE
         Qt6::Core
         Qt6::Widgets
         Qt6::Multimedia
+        Qt6::OpenGLWidgets
         sqlite3
         OpenAL
 )

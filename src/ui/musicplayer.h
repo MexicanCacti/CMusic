@@ -19,7 +19,7 @@
 #include <QMessageBox>
 #include <QSignalBlocker>
 
-#include "../visualizer/visualizerwidget.h"
+#include "../visualizer/visualWidget.h"
 #include "../audio/playbackcontroller.h"
 
 class MusicPlayer : public QWidget
@@ -54,7 +54,7 @@ private:
     QLabel *currentSong;
     QDateTimeEdit *currentDateTime;
 
-    VisualizerWidget *visualizer;
+    VisualWidget *visualizer;
     QLCDNumber *playTime;
     QSlider *playbackSlider;
     QSlider *volumeSlider;

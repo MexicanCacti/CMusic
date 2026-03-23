@@ -49,7 +49,7 @@ void MusicPlayer::buildUi()
     currentDateTime->setReadOnly(true);
     currentDateTime->setDisplayFormat("ddd MMM yy hh:mm:ss AP");
 
-    visualizer = new VisualizerWidget(this);
+    visualizer = new VisualWidget(this);
 
     playTime = new QLCDNumber(this);
     playTime->setDigitCount(5);
@@ -64,7 +64,7 @@ void MusicPlayer::buildUi()
     auto *mainLayout = new QGridLayout(this);
     mainLayout->setContentsMargins(16, 16, 16, 16);
     mainLayout->setHorizontalSpacing(12);
-    mainLayout->setVerticalSpacing(12);
+    mainLayout->setVerticalSpacing(6);
 
     mainLayout->addWidget(loadButton,       0, 0);
     mainLayout->addWidget(playButton,       0, 1);
@@ -161,6 +161,7 @@ void MusicPlayer::onPlaybackPositionChanged(int seconds)
         QSignalBlocker blocker(playbackSlider);
         playbackSlider->setValue(seconds);
     }
+    visualizer->setPlaybackTime(static_cast<float>(seconds));
 }
 
 void MusicPlayer::onDurationChanged(int seconds)
