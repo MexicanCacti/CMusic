@@ -5,20 +5,6 @@ set(CMAKE_CXX_STANDARD 20)
 
 set(RESOURCE_DIR "${CMAKE_SOURCE_DIR}/src/resources")
 
-include(FetchContent)
-
-# OpenAL
-set(ALSOFT_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(ALSOFT_UTILS OFF CACHE BOOL "" FORCE)
-set(ALSOFT_NO_CONFIG_UTIL ON CACHE BOOL "" FORCE)
-
-FetchContent_Declare(
-        openal_soft
-        GIT_REPOSITORY https://github.com/kcat/openal-soft.git
-        GIT_TAG 1.25.1
-)
-FetchContent_MakeAvailable(openal_soft)
-
 # Enter directories listed & execute CMakeLists.txt located there
 add_subdirectory(
         third_party/sqlite
@@ -67,7 +53,6 @@ target_link_libraries( CMusic PRIVATE
         Qt6::Multimedia
         Qt6::OpenGLWidgets
         sqlite3
-        OpenAL
 )
 
 include(GNUInstallDirs)

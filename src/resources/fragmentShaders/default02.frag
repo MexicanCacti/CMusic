@@ -50,7 +50,7 @@ void main()
     );
 
     col = rotateAround(col, sign(r * max(u_time, 0.0001)), uv);
-    //col = rotateAround(col, pow(max(u_time, 0.0001), max(uv.y, 0.0001)), uv);
+    col = rotateAround(col, pow(max(u_time * sampleFFT(r), 0.0001), max(uv.y, 0.0001)), uv);
     col = spots(col, uv);
 
     col /= max(exp(r) / 2.0, 0.001);
