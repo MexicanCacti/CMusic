@@ -37,7 +37,7 @@ private:
     void initShader(QString vertShaderSource, QString fragShaderSource);
     void ensureDefaultData();
     const QString defaultVertShader = ":/resources/vertexShaders/default.vert";
-    const QString defaultFragShader = ":/resources/fragmentShaders/default.frag";
+    const QString defaultFragShader = ":/resources/fragmentShaders/default02.frag";
     QString currentVertShader = defaultVertShader;
     QString currentFragShader = defaultFragShader;
     QOpenGLShaderProgram *shaderProgram;

@@ -10,7 +10,7 @@ VisualWidget::VisualWidget(QWidget* parent)
 {
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    ensureDefaultData();
+    //ensureDefaultData();
 
     connect(frameTimer, &QTimer::timeout,
             this, &VisualWidget::onFrameTick);
@@ -51,7 +51,7 @@ void VisualWidget::setPlaying(bool playing)
 
 void VisualWidget::setLevel(int level)
 {
-    level = std::clamp(level / 100.0f, 0.0f, 1.0f);
+    this->level = std::clamp(level / 100.0f, 0.0f, 1.0f);
     update();
 }
 

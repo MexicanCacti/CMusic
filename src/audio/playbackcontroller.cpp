@@ -20,6 +20,12 @@ PlaybackController::PlaybackController(QObject *parent)
 
     connect(audioEngine, &AudioEngine::errorOccurred,
             this, &::PlaybackController::onEngineErrorOccurred);
+
+    connect(audioEngine, &AudioEngine::fftBinsReady,
+            this, &PlaybackController::fftBinsReady);
+
+    connect(audioEngine, &AudioEngine::analysisLevelReady,
+            this, &PlaybackController::analysisLevelReady);
 }
 
 void PlaybackController::togglePlayPause()

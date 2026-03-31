@@ -4,7 +4,7 @@
 #include <QStringList>
 #include <QTimer>
 #include <QFileInfo>
-
+#include <QAudioBufferOutput>
 #include "../audio/audioengine.h"
 
 class PlaybackController : public QObject
@@ -42,7 +42,8 @@ signals:
     void durationChanged(int seconds);
     void volumeChanged(int volume);
     void errorOccurred(const QString& message);
-
+    void fftBinsReady(const QVector<float>& bins);
+    void analysisLevelReady(float level);
 private:
     AudioEngine *audioEngine;
     QString currentSong;

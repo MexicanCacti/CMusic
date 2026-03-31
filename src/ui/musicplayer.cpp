@@ -137,6 +137,12 @@ void MusicPlayer::connectController()
     connect(playbackController, &PlaybackController::volumeChanged,
             this, &MusicPlayer::onVolumeChanged);
 
+    connect(playbackController, &PlaybackController::fftBinsReady,
+            visualizer, &VisualWidget::setFFTBins);
+
+    connect(playbackController, &PlaybackController::analysisLevelReady,
+            visualizer, &VisualWidget::setLevel);
+
     //connect(playbackController, &PlaybackController::errorOccurred,
     //        this, &MusicPlayer::onErrorOccurred);
 }
@@ -168,7 +174,6 @@ void MusicPlayer::onPlaybackPositionChanged(int seconds)
         QSignalBlocker blocker(playbackSlider);
         playbackSlider->setValue(seconds);
     }
-    //visualizer->setPlaybackTime(static_cast<float>(seconds));
 }
 
 void MusicPlayer::onDurationChanged(int seconds)
@@ -223,5 +228,5 @@ void MusicPlayer::openFileDialog()
 void MusicPlayer::changeShaders()
 {
     visualizer->findShaderSource();
-    playbackController->resetSong();
+    //playbackController->resetSong();
 }

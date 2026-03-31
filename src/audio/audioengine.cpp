@@ -5,13 +5,47 @@ AudioEngine::AudioEngine(QObject *parent)
     : QObject(parent),
     mediaPlayer(new QMediaPlayer(this)),
     audioOutput(new QAudioOutput(this)),
+    audioBufferOutput(new QAudioBufferOutput(this)),
+    audioAnalyzer(new AudioAnalyzer()),
     isPlaying(false),
     volume(50),
     positionMs(0),
     durationMs(0)
 {
+    // Register for cross-thread communication
+    qRegisterMetaType<QAudioBuffer>("QAudioBuffer");
+
     mediaPlayer->setAudioOutput(audioOutput);
+    mediaPlayer->setAudioBufferOutput(audioBufferOutput);
+
     audioOutput->setVolume(volume / 100.0);
+
+    audioAnalyzer->moveToThread(&analysisThread);
+
+    connect(&analysisThread, &QThread::finished,
+            audioAnalyzer, &QObject::deleteLater);
+
+    // Forward audio buffer to thread
+    connect(audioBufferOutput, &QAudioBufferOutput::audioBufferReceived,
+            this, &AudioEngine::analyzeBuffer, Qt::DirectConnection);
+
+    connect(this, &AudioEngine::analyzeBuffer,
+            audioAnalyzer, &AudioAnalyzer::processBuffer, Qt::QueuedConnection);
+
+    // Forward analysis results out
+    connect(audioAnalyzer, &AudioAnalyzer::fftReady,
+            this, &AudioEngine::fftBinsReady, Qt::QueuedConnection);
+
+    connect(audioAnalyzer, &AudioAnalyzer::levelReady,
+            this, &AudioEngine::analysisLevelReady,
+            Qt::QueuedConnection);
+
+    // Optional reset path when seeking/loading
+    connect(this, &AudioEngine::resetAnalysis,
+            audioAnalyzer, &AudioAnalyzer::reset,
+            Qt::QueuedConnection);
+
+    analysisThread.start();
 
     connect(mediaPlayer, &QMediaPlayer::playbackStateChanged,
             this, &AudioEngine::handlePlaybackStateChanged);

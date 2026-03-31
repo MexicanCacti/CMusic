@@ -29,6 +29,8 @@ find_package(Qt6
 )
 qt_standard_project_setup()
 
+
+
 file(GLOB_RECURSE SOURCES
         ./src/*.cpp
         ./src/*.hpp
@@ -44,12 +46,18 @@ file(GLOB_RECURSE RESOURCE_FILES "${RESOURCE_DIR}/*.*")
 
 qt_add_executable(CMusic
         ${SOURCES}
+        third_party/kissfft/kiss_fft.c
+        third_party/kissfft/kiss_fftr.c
 )
 
 qt_add_resources(CMusic "resources"
         PREFIX "/resources"
         BASE "${RESOURCE_DIR}"
         FILES ${RESOURCE_FILES}
+)
+
+target_include_directories(CMusic PRIVATE
+        third_party/kissfft
 )
 
 # Links libraries to executable
