@@ -9,6 +9,7 @@
 #include <QOpenGLShaderProgram>
 #include <QTMath>
 #include <QFileDialog>
+#include <QElapsedTimer>
 
 class VisualWidget : public QOpenGLWidget, protected QOpenGLFunctions
 {
@@ -47,6 +48,8 @@ private:
     float level;
     bool isPlaying;
     QByteArray loadShaderSource(QString filePath);
+    QElapsedTimer elapsedTimer;
+    qint64 lastFrameMs = 0;
 };
 
 #endif // VISUALWIDGET_H

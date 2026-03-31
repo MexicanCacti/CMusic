@@ -168,7 +168,7 @@ void MusicPlayer::onPlaybackPositionChanged(int seconds)
         QSignalBlocker blocker(playbackSlider);
         playbackSlider->setValue(seconds);
     }
-    visualizer->setPlaybackTime(static_cast<float>(seconds));
+    //visualizer->setPlaybackTime(static_cast<float>(seconds));
 }
 
 void MusicPlayer::onDurationChanged(int seconds)

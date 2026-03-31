@@ -15,6 +15,7 @@ VisualWidget::VisualWidget(QWidget* parent)
     connect(frameTimer, &QTimer::timeout,
             this, &VisualWidget::onFrameTick);
 
+    frameTimer->setTimerType(Qt::PreciseTimer);
     frameTimer->start(16);
 }
 
@@ -101,7 +102,11 @@ void VisualWidget::paintGL()
 
 void VisualWidget::onFrameTick()
 {
-    if(isPlaying) playbackTime += 0.16f;
+    qint64 now = elapsedTimer.elapsed();
+    float delta = float(now - lastFrameMs) / 1000.0f;
+    lastFrameMs = now;
+
+    if(isPlaying) playbackTime += delta;
     update();
 }
 
@@ -171,6 +176,7 @@ void VisualWidget::initShader(QString vertShaderSource, QString fragShaderSource
         qWarning("Shader program link failed");
         return;
     }
+    update();
 }
 
 void VisualWidget::ensureDefaultData()
