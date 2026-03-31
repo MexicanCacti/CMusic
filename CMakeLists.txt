@@ -3,6 +3,8 @@ project(CMusic LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
+set(RESOURCE_DIR "${CMAKE_SOURCE_DIR}/src/resources")
+
 include(FetchContent)
 
 # OpenAL
@@ -38,8 +40,16 @@ file(GLOB_RECURSE SOURCES
         ./src/*/*.h
 )
 
+file(GLOB_RECURSE RESOURCE_FILES "${RESOURCE_DIR}/*.*")
+
 qt_add_executable(CMusic
         ${SOURCES}
+)
+
+qt_add_resources(CMusic "resources"
+        PREFIX "/resources"
+        BASE "${RESOURCE_DIR}"
+        FILES ${RESOURCE_FILES}
 )
 
 # Links libraries to executable

@@ -20,6 +20,7 @@ public:
     void setVolume(int volume);
     void seek(int seconds);
     void loadFile(const QString& filePath);
+    void resetSong();
 
     bool getIsPlaying() const;
     QString getCurrentSong() const;

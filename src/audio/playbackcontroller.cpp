@@ -67,6 +67,11 @@ void PlaybackController::loadFile(const QString& filePath)
     audioEngine->loadFile(filePath);
 }
 
+void PlaybackController::resetSong()
+{
+    audioEngine->setPositionMs(0.0);
+}
+
 void PlaybackController::onEnginePlayingChanged(bool playing)
 {
     emit playingChanged(playing);

@@ -65,7 +65,7 @@ void VisualWidget::initializeGL()
     initializeOpenGLFunctions();
     glDisable(GL_DEPTH_TEST);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    initShader();
+    initShader(defaultVertShader, defaultFragShader);
 }
 
 void VisualWidget::resizeGL(int w, int h)
@@ -105,73 +105,67 @@ void VisualWidget::onFrameTick()
     update();
 }
 
-void VisualWidget::initShader()
+void VisualWidget::findShaderSource()
+{
+    QString vertShader = QFileDialog::getOpenFileName(
+        this,
+        tr("Open Vertex Shader File"),
+        QString(),
+        tr("Vertex Shader Files (*.vert);;All Files (*)")
+        );
+
+    if (vertShader.isEmpty()) {
+        vertShader = currentVertShader;
+    }
+
+    QString fragShader = QFileDialog::getOpenFileName(
+        this,
+        tr("Open Fragment Shader File"),
+        QString(),
+        tr("Fragment Shader Files (*.frag);;All Files (*)")
+        );
+
+    if (fragShader.isEmpty()) {
+        fragShader = currentFragShader;
+    }
+
+    initShader(vertShader, fragShader);
+}
+
+QByteArray VisualWidget::loadShaderSource(QString filePath)
+{
+    QFile file(filePath);
+    if(!file.open(QIODevice::ReadOnly | QIODevice::Text)){
+        return QByteArray();
+    }
+
+    QByteArray source = file.readAll();
+    return source;
+}
+
+void VisualWidget::initShader(QString vertShaderSource, QString fragShaderSource)
 {
     delete shaderProgram;
     shaderProgram = new QOpenGLShaderProgram(this);
 
-    static const char *vertexSource = R"(
-        #version 330 core
-
-        out vec2 v_uv;
-
-        void main()
-        {
-            vec2 positions[3] = vec2[](
-                vec2(-1.0, -1.0),
-                vec2( 3.0, -1.0),
-                vec2(-1.0,  3.0)
-            );
-
-            vec2 pos = positions[gl_VertexID];
-            v_uv = pos * 0.5 + 0.5;
-
-            gl_Position = vec4(pos, 0.0, 1.0);
+    if (!shaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, loadShaderSource(vertShaderSource))) {
+        qWarning("Vertex shader compilation failed, trying default...");
+        if(!shaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, loadShaderSource(defaultVertShader))){
+            qWarning("Vertex shader compilation failed");
+            return;
         }
-)";
-
-    static const char *fragmentSource = R"(
-        #version 330 core
-
-        in vec2 v_uv;
-        out vec4 fragColor;
-
-        uniform vec2 u_resolution;
-        uniform float u_time;
-
-        void main()
-        {
-            vec2 p = v_uv * 2.0 - 1.0;
-            p.x *= u_resolution.x / u_resolution.y;
-
-            float r = length(p) * 0.2f;
-            float a = atan(p.y, p.x);
-
-            a += cos(u_time);
-
-            float spiral = sin(16.0 * r - 5.0 * a);
-            float line = smoothstep(0.12, 0.0, sin(spiral));
-
-            float fade = exp(-1.8 * r);
-            float glow = line * fade;
-
-            vec3 base = vec3(0.1, 0.2, 0.8);
-            vec3 highlight = vec3(1.0, sin(u_time * a), cos(u_time * 0.2));
-            vec3 color = mix(base, highlight, r + 0.3 * tan(u_time * a));
-
-            fragColor = vec4(color * glow, 1.0);
-        }
-    )";
-
-    if (!shaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexSource)) {
-        qWarning("Vertex shader compilation failed");
-        return;
     }
 
-    if (!shaderProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentSource)) {
-        qWarning("Fragment shader compilation failed");
-        return;
+    if (!shaderProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, loadShaderSource(fragShaderSource))) {
+        qWarning("Fragment shader compilation failed, trying default...");
+        if(!shaderProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, loadShaderSource(defaultFragShader))){
+            qWarning("Fragment shader compilation failed");
+            return;
+        }
     }
+
+    currentVertShader = vertShaderSource;
+    currentFragShader = fragShaderSource;
 
     if (!shaderProgram->link()) {
         qWarning("Shader program link failed");

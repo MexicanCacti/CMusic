@@ -4,13 +4,13 @@ MusicPlayer::MusicPlayer(QWidget* parent)
     : QWidget(parent),
     playbackController(new PlaybackController(this)),
     loadButton(nullptr),
+    shaderButton(nullptr),
     playButton(nullptr),
     prevButton(nullptr),
     nextButton(nullptr),
     playbackSlider(nullptr),
     volumeSlider(nullptr),
     currentSong(nullptr),
-    currentDateTime(nullptr),
     visualizer(nullptr),
     playTime(nullptr),
     clockTimer(new QTimer(this))
@@ -19,7 +19,7 @@ MusicPlayer::MusicPlayer(QWidget* parent)
     connectUi();
     connectController();
 
-    currentDateTime->setDateTime(QDateTime::currentDateTime());
+    //currentDateTime->setDateTime(QDateTime::currentDateTime());
 
     onPlayingChanged(playbackController->getIsPlaying());
     onCurrentSongChanged(playbackController->getCurrentSong());
@@ -35,25 +35,26 @@ MusicPlayer::MusicPlayer(QWidget* parent)
 
 void MusicPlayer::buildUi()
 {
-    loadButton = new QPushButton("Load", this);
-    playButton = new QPushButton("Play", this);
-    prevButton = new QPushButton("Prev", this);
-    nextButton = new QPushButton("Next", this);
+    loadButton      = new QPushButton("Load", this);
+    shaderButton    = new QPushButton("Load Shader", this);
+    playButton      = new QPushButton("Play", this);
+    prevButton      = new QPushButton("Prev", this);
+    nextButton      = new QPushButton("Next", this);
 
     currentSong = new QLabel(this);
     currentSong->setText("CurrentSong: None");
     currentSong->setAlignment(Qt::AlignCenter | Qt::AlignVCenter);
     currentSong->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
-    currentDateTime = new QDateTimeEdit(this);
-    currentDateTime->setReadOnly(true);
-    currentDateTime->setDisplayFormat("ddd MMM yy hh:mm:ss AP");
+    //currentDateTime = new QDateTimeEdit(this);
+    //currentDateTime->setReadOnly(true);
+    //currentDateTime->setDisplayFormat("MMMM dd yy hh:mm:s AP");
 
     visualizer = new VisualWidget(this);
 
     playTime = new QLCDNumber(this);
     playTime->setDigitCount(5);
-    playTime->setSegmentStyle(QLCDNumber::Outline);
+    playTime->setSegmentStyle(QLCDNumber::Filled);
 
     volumeSlider = new QSlider(Qt::Horizontal, this);
     volumeSlider->setRange(0, 100);
@@ -69,16 +70,17 @@ void MusicPlayer::buildUi()
     mainLayout->addWidget(loadButton,       0, 0);
     mainLayout->addWidget(playButton,       0, 1);
     mainLayout->addWidget(currentSong,      0, 2);
-    mainLayout->addWidget(currentDateTime,  0, 3);
+    mainLayout->addWidget(shaderButton,     0, 4);
+    //mainLayout->addWidget(currentDateTime,  0, 4);
 
-    mainLayout->addWidget(visualizer,       1, 0, 2, 4);
+    mainLayout->addWidget(visualizer,       1, 0, 2, 5);
 
-    mainLayout->addWidget(playbackSlider,   3, 0, 1, 4);
-    mainLayout->addWidget(playTime,         4, 1, 1, 2);
+    mainLayout->addWidget(playbackSlider,   3, 0, 1, 5);
+    mainLayout->addWidget(playTime,         4, 1, 1, 3);
 
     mainLayout->addWidget(prevButton,       5, 0);
-    mainLayout->addWidget(volumeSlider,     5, 1, 1, 2);
-    mainLayout->addWidget(nextButton,       5, 3);
+    mainLayout->addWidget(volumeSlider,     5, 1, 1, 3);
+    mainLayout->addWidget(nextButton,       5, 4, 1, 1);
 
     setLayout(mainLayout);
     setWindowTitle("CMusic");
@@ -89,6 +91,9 @@ void MusicPlayer::connectUi()
 {
     connect(loadButton, &QPushButton::clicked,
             this, &MusicPlayer::openFileDialog);
+
+    connect(shaderButton, &QPushButton::clicked,
+            this, &MusicPlayer::changeShaders);
 
     connect(playButton, &QPushButton::clicked,
             playbackController, &PlaybackController::togglePlayPause);
@@ -111,8 +116,8 @@ void MusicPlayer::connectUi()
                 playbackController->seek(playbackSlider->value());
             });
 
-    connect(clockTimer, &QTimer::timeout,
-            this, &MusicPlayer::updateDateTime);
+    //connect(clockTimer, &QTimer::timeout,
+    //        this, &MusicPlayer::updateDateTime);
 }
 
 void MusicPlayer::connectController()
@@ -132,14 +137,16 @@ void MusicPlayer::connectController()
     connect(playbackController, &PlaybackController::volumeChanged,
             this, &MusicPlayer::onVolumeChanged);
 
-    connect(playbackController, &PlaybackController::errorOccurred,
-            this, &MusicPlayer::onErrorOccurred);
+    //connect(playbackController, &PlaybackController::errorOccurred,
+    //        this, &MusicPlayer::onErrorOccurred);
 }
 
+/*
 void MusicPlayer::updateDateTime()
 {
     currentDateTime->setDateTime(QDateTime::currentDateTime());
 }
+*/
 
 void MusicPlayer::onPlayingChanged(bool playing)
 {
@@ -211,4 +218,10 @@ void MusicPlayer::openFileDialog()
     }
 
     playbackController->loadFile(filePath);
+}
+
+void MusicPlayer::changeShaders()
+{
+    visualizer->findShaderSource();
+    playbackController->resetSong();
 }

@@ -30,7 +30,7 @@ public:
     explicit MusicPlayer(QWidget *parent = nullptr);
 
 private slots:
-    void updateDateTime();
+    //void updateDateTime();
     void onPlayingChanged(bool playing);
     void onCurrentSongChanged(const QString& songTitle);
     void onPlaybackPositionChanged(int seconds);
@@ -38,6 +38,7 @@ private slots:
     void onVolumeChanged(int value);
     void onErrorOccurred(const QString &message);
     void openFileDialog();
+    void changeShaders();
 
 
 private:
@@ -47,12 +48,13 @@ private:
     void updateTrackDisplay(int seconds);
 
     QPushButton *loadButton;
+    QPushButton *shaderButton;
     QPushButton *playButton;
     QPushButton *prevButton;
     QPushButton *nextButton;
 
     QLabel *currentSong;
-    QDateTimeEdit *currentDateTime;
+    //QDateTimeEdit *currentDateTime;
 
     VisualWidget *visualizer;
     QLCDNumber *playTime;

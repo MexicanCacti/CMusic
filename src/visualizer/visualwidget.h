@@ -8,7 +8,7 @@
 #include <QTimer>
 #include <QOpenGLShaderProgram>
 #include <QTMath>
-#include <algorithm>
+#include <QFileDialog>
 
 class VisualWidget : public QOpenGLWidget, protected QOpenGLFunctions
 {
@@ -22,6 +22,7 @@ public:
     void setHashParams(const QVector<float>& params);
     void setPlaying(bool playing);
     void setLevel(int level);
+    void findShaderSource();
 
 protected:
     void initializeGL() override;
@@ -32,9 +33,12 @@ private slots:
     void onFrameTick();
 
 private:
-    void initShader();
+    void initShader(QString vertShaderSource, QString fragShaderSource);
     void ensureDefaultData();
-
+    const QString defaultVertShader = ":/resources/vertexShaders/default.vert";
+    const QString defaultFragShader = ":/resources/fragmentShaders/default.frag";
+    QString currentVertShader = defaultVertShader;
+    QString currentFragShader = defaultFragShader;
     QOpenGLShaderProgram *shaderProgram;
     QTimer *frameTimer;
     QVector<float> fftBins;
@@ -42,6 +46,7 @@ private:
     float playbackTime;
     float level;
     bool isPlaying;
+    QByteArray loadShaderSource(QString filePath);
 };
 
 #endif // VISUALWIDGET_H
