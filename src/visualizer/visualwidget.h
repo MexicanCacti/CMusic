@@ -10,6 +10,7 @@
 #include <QTMath>
 #include <QFileDialog>
 #include <QElapsedTimer>
+#include <QDockWidget>
 
 class VisualWidget : public QOpenGLWidget, protected QOpenGLFunctions
 {
@@ -24,6 +25,7 @@ public:
     void setPlaying(bool playing);
     void setLevel(int level);
     void findShaderSource();
+    void reloadShaders();
 
 protected:
     void initializeGL() override;

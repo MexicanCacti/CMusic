@@ -1,19 +1,24 @@
 #include "musicplayer.h"
 
 MusicPlayer::MusicPlayer(QWidget* parent)
-    : QWidget(parent),
+    : QMainWindow(parent),
     playbackController(new PlaybackController(this)),
     loadButton(nullptr),
+    refreshShaderButton(nullptr),
     shaderButton(nullptr),
     playButton(nullptr),
     prevButton(nullptr),
     nextButton(nullptr),
+    fullscreenButton(nullptr),
     playbackSlider(nullptr),
     volumeSlider(nullptr),
     currentSong(nullptr),
     visualizer(nullptr),
     playTime(nullptr),
-    clockTimer(new QTimer(this))
+    clockTimer(new QTimer(this)),
+    visualizerDock(nullptr),
+    fullscreenContainer(nullptr),
+    visualizerFullscreen(false)
 {
     buildUi();
     connectUi();
@@ -37,9 +42,11 @@ void MusicPlayer::buildUi()
 {
     loadButton      = new QPushButton("Load", this);
     shaderButton    = new QPushButton("Load Shader", this);
+    refreshShaderButton = new QPushButton("Refresh Shader", this);
     playButton      = new QPushButton("Play", this);
     prevButton      = new QPushButton("Prev", this);
     nextButton      = new QPushButton("Next", this);
+    fullscreenButton = new QPushButton("Fullscreen Visualizer", this);
 
     currentSong = new QLabel(this);
     currentSong->setText("CurrentSong: None");
@@ -49,8 +56,6 @@ void MusicPlayer::buildUi()
     //currentDateTime = new QDateTimeEdit(this);
     //currentDateTime->setReadOnly(true);
     //currentDateTime->setDisplayFormat("MMMM dd yy hh:mm:s AP");
-
-    visualizer = new VisualWidget(this);
 
     playTime = new QLCDNumber(this);
     playTime->setDigitCount(5);
@@ -62,7 +67,8 @@ void MusicPlayer::buildUi()
     playbackSlider = new QSlider(Qt::Horizontal, this);
     playbackSlider->setRange(0, 0);
 
-    auto *mainLayout = new QGridLayout(this);
+    QWidget* central = new QWidget(this);
+    auto *mainLayout = new QGridLayout(central);
     mainLayout->setContentsMargins(16, 16, 16, 16);
     mainLayout->setHorizontalSpacing(12);
     mainLayout->setVerticalSpacing(6);
@@ -70,19 +76,44 @@ void MusicPlayer::buildUi()
     mainLayout->addWidget(loadButton,       0, 0);
     mainLayout->addWidget(playButton,       0, 1);
     mainLayout->addWidget(currentSong,      0, 2);
+    mainLayout->addWidget(refreshShaderButton, 0, 3);
     mainLayout->addWidget(shaderButton,     0, 4);
     //mainLayout->addWidget(currentDateTime,  0, 4);
 
-    mainLayout->addWidget(visualizer,       1, 0, 2, 5);
+    //mainLayout->addWidget(visualizerDock,       1, 0, 3, 5);
 
-    mainLayout->addWidget(playbackSlider,   3, 0, 1, 5);
-    mainLayout->addWidget(playTime,         4, 1, 1, 3);
+    mainLayout->addWidget(playbackSlider,   4, 0, 1, 5);
+    mainLayout->addWidget(playTime,         5, 1, 1, 2);
 
-    mainLayout->addWidget(prevButton,       5, 0);
-    mainLayout->addWidget(volumeSlider,     5, 1, 1, 3);
-    mainLayout->addWidget(nextButton,       5, 4, 1, 1);
+    mainLayout->addWidget(prevButton,       6, 0);
+    mainLayout->addWidget(volumeSlider,     6, 1, 1, 3);
+    mainLayout->addWidget(nextButton,       6, 4, 1, 1);
+    setCentralWidget(central);
 
-    setLayout(mainLayout);
+    //setLayout(mainLayout);
+    visualizer = new VisualWidget(this);
+    visualizerDock = new QDockWidget("Visualizer", this);
+    QWidget* titleBar = new QWidget(visualizerDock);
+    QHBoxLayout* titleLayout = new QHBoxLayout(titleBar);
+    QPushButton* visualizerShaderButton = new QPushButton("Load Shader", titleBar);
+    titleLayout->setContentsMargins(4, 2, 4, 2);
+    QLabel* titleLabel = new QLabel("Visualizer", titleBar);
+    titleLayout->setSpacing(6);
+    titleLayout->addWidget(visualizerShaderButton, 0, Qt::AlignLeft);
+    titleLayout->addWidget(titleLabel, 0, Qt::AlignCenter | Qt::AlignVCenter);
+    titleLayout->addWidget(fullscreenButton, 0, Qt::AlignRight);
+    titleBar->setLayout(titleLayout);
+    visualizerDock->setTitleBarWidget(titleBar);
+
+    visualizerDock->setAllowedAreas(Qt::AllDockWidgetAreas);
+    visualizerDock->setFeatures(
+        QDockWidget::DockWidgetMovable |
+        QDockWidget::DockWidgetFloatable
+    );
+
+    visualizerDock->setWidget(visualizer);
+    addDockWidget(Qt::BottomDockWidgetArea, visualizerDock);
+
     setWindowTitle("CMusic");
     resize(800, 400);
 }
@@ -94,6 +125,9 @@ void MusicPlayer::connectUi()
 
     connect(shaderButton, &QPushButton::clicked,
             this, &MusicPlayer::changeShaders);
+
+    connect(refreshShaderButton, &QPushButton::clicked,
+            this, &MusicPlayer::refreshShaders);
 
     connect(playButton, &QPushButton::clicked,
             playbackController, &PlaybackController::togglePlayPause);
@@ -116,6 +150,8 @@ void MusicPlayer::connectUi()
                 playbackController->seek(playbackSlider->value());
             });
 
+    connect(fullscreenButton, &QPushButton::clicked,
+            this, &MusicPlayer::toggleVisualizerFullscreen);
     //connect(clockTimer, &QTimer::timeout,
     //        this, &MusicPlayer::updateDateTime);
 }
@@ -153,6 +189,38 @@ void MusicPlayer::updateDateTime()
     currentDateTime->setDateTime(QDateTime::currentDateTime());
 }
 */
+
+void MusicPlayer::toggleVisualizerFullscreen()
+{
+    if (!visualizerFullscreen)
+    {
+        visualizerDock->hide();
+
+        fullscreenContainer = new QWidget();
+        auto *layout = new QVBoxLayout(fullscreenContainer);
+        layout->setContentsMargins(0, 0, 0, 0);
+
+        visualizer->setParent(fullscreenContainer);
+        layout->addWidget(visualizer);
+
+        fullscreenContainer->setWindowFlag(Qt::Window, true);
+        fullscreenContainer->setWindowTitle("Visualizer");
+        fullscreenContainer->showFullScreen();
+
+        visualizerFullscreen = true;
+    }
+    else
+    {
+        fullscreenContainer->layout()->removeWidget(visualizer);
+        visualizerDock->show();
+
+        fullscreenContainer->close();
+        delete fullscreenContainer;
+        fullscreenContainer = nullptr;
+
+        visualizerFullscreen = false;
+    }
+}
 
 void MusicPlayer::onPlayingChanged(bool playing)
 {
@@ -223,6 +291,11 @@ void MusicPlayer::openFileDialog()
     }
 
     playbackController->loadFile(filePath);
+}
+
+void MusicPlayer::refreshShaders()
+{
+    visualizer->reloadShaders();
 }
 
 void MusicPlayer::changeShaders()

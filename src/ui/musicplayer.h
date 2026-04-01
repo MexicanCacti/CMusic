@@ -18,11 +18,14 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QSignalBlocker>
+#include <QDockWidget>
+#include <QMainWindow>
+
 
 #include "../visualizer/visualWidget.h"
 #include "../audio/playbackcontroller.h"
 
-class MusicPlayer : public QWidget
+class MusicPlayer : public QMainWindow
 {
     Q_OBJECT
 
@@ -39,6 +42,8 @@ private slots:
     void onErrorOccurred(const QString &message);
     void openFileDialog();
     void changeShaders();
+    void toggleVisualizerFullscreen();
+    void refreshShaders();
 
 
 private:
@@ -48,10 +53,12 @@ private:
     void updateTrackDisplay(int seconds);
 
     QPushButton *loadButton;
+    QPushButton* refreshShaderButton;
     QPushButton *shaderButton;
     QPushButton *playButton;
     QPushButton *prevButton;
     QPushButton *nextButton;
+    QPushButton *fullscreenButton;
 
     QLabel *currentSong;
     //QDateTimeEdit *currentDateTime;
@@ -63,6 +70,11 @@ private:
 
     QTimer *clockTimer;
     PlaybackController *playbackController;
+
+    QDockWidget* visualizerDock;
+    QWidget* fullscreenContainer;
+    bool visualizerFullscreen;
+
 };
 
 #endif // MUSICPLAYER_H

@@ -122,6 +122,7 @@ void VisualWidget::findShaderSource()
     if (vertShader.isEmpty()) {
         vertShader = currentVertShader;
     }
+    currentVertShader = vertShader;
 
     QString fragShader = QFileDialog::getOpenFileName(
         this,
@@ -133,8 +134,14 @@ void VisualWidget::findShaderSource()
     if (fragShader.isEmpty()) {
         fragShader = currentFragShader;
     }
+    currentFragShader = fragShader;
 
     initShader(vertShader, fragShader);
+}
+
+void VisualWidget::reloadShaders()
+{
+    initShader(currentVertShader, currentFragShader);
 }
 
 QByteArray VisualWidget::loadShaderSource(QString filePath)
