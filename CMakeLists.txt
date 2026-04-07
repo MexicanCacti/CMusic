@@ -5,6 +5,10 @@ set(CMAKE_CXX_STANDARD 20)
 
 set(RESOURCE_DIR "${CMAKE_SOURCE_DIR}/src/resources")
 
+set(CMAKE_AUTOMOC TRUE)
+set(CMAKE_AUTORCC TRUE)
+set(CMAKE_AUTOUIC TRUE)
+
 # Enter directories listed & execute CMakeLists.txt located there
 add_subdirectory(
         third_party/sqlite
@@ -45,6 +49,12 @@ qt_add_resources(CMusic "resources"
 target_include_directories(CMusic PRIVATE
         third_party/kissfft
 )
+target_include_directories(CMusic PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/audio"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/ui"
+)
+
 
 # Links libraries to executable
 target_link_libraries( CMusic PRIVATE

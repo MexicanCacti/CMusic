@@ -1,4 +1,4 @@
-#include "VisualWidget.h"
+#include "visualwidget.h"
 
 VisualWidget::VisualWidget(QWidget* parent)
     :QOpenGLWidget(parent),
@@ -162,6 +162,7 @@ void VisualWidget::initShader(QString vertShaderSource, QString fragShaderSource
 
     if (!shaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, loadShaderSource(vertShaderSource))) {
         qWarning("Vertex shader compilation failed, trying default...");
+
         if(!shaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, loadShaderSource(defaultVertShader))){
             qWarning("Vertex shader compilation failed");
             return;

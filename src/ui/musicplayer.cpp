@@ -18,7 +18,8 @@ MusicPlayer::MusicPlayer(QWidget* parent)
     clockTimer(new QTimer(this)),
     visualizerDock(nullptr),
     fullscreenContainer(nullptr),
-    visualizerFullscreen(false)
+    visualizerFullscreen(false),
+    visualizerShaderButton(nullptr)
 {
     buildUi();
     connectUi();
@@ -95,7 +96,7 @@ void MusicPlayer::buildUi()
     visualizerDock = new QDockWidget("Visualizer", this);
     QWidget* titleBar = new QWidget(visualizerDock);
     QHBoxLayout* titleLayout = new QHBoxLayout(titleBar);
-    QPushButton* visualizerShaderButton = new QPushButton("Load Shader", titleBar);
+    visualizerShaderButton = new QPushButton("Load Shader", titleBar);
     titleLayout->setContentsMargins(4, 2, 4, 2);
     QLabel* titleLabel = new QLabel("Visualizer", titleBar);
     titleLayout->setSpacing(6);
@@ -112,7 +113,7 @@ void MusicPlayer::buildUi()
     );
 
     visualizerDock->setWidget(visualizer);
-    addDockWidget(Qt::BottomDockWidgetArea, visualizerDock);
+    addDockWidget(Qt::TopDockWidgetArea, visualizerDock);
 
     setWindowTitle("CMusic");
     resize(800, 400);
@@ -120,6 +121,9 @@ void MusicPlayer::buildUi()
 
 void MusicPlayer::connectUi()
 {
+    connect(visualizerShaderButton, &QPushButton::clicked,
+            this, &MusicPlayer::changeShaders);
+
     connect(loadButton, &QPushButton::clicked,
             this, &MusicPlayer::openFileDialog);
 
@@ -203,9 +207,9 @@ void MusicPlayer::toggleVisualizerFullscreen()
         visualizer->setParent(fullscreenContainer);
         layout->addWidget(visualizer);
 
-        fullscreenContainer->setWindowFlag(Qt::Window, true);
+        fullscreenContainer->setWindowFlag(Qt::Popup, true);
         fullscreenContainer->setWindowTitle("Visualizer");
-        fullscreenContainer->showFullScreen();
+        fullscreenContainer->showMaximized();
 
         visualizerFullscreen = true;
     }

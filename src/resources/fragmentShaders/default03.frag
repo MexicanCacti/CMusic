@@ -7,6 +7,12 @@ uniform vec2  u_resolution;
 uniform float u_time;
 uniform float u_fft[64];
 
+float getFFTValue(float pos)
+{
+    int index = int(floor(clamp(pos, 0.0, 0.9999) * 64.0));
+    return u_fft[index];
+}
+
 void main() {
     float PI = 3.14159265358979;
     vec2 uv = (gl_FragCoord.xy - u_resolution * 0.5) / min(u_resolution.x, u_resolution.y);
@@ -14,7 +20,7 @@ void main() {
     float trx = abs(tx - uv.x);
 
     // Sub-bass enlarges the spiral — values already log-scaled so response feels natural
-    float scale = 0.5 + u_fft[0] * 2.5;
+    float scale = log(0.5 + u_fft[0] * 2.5);
     uv /= scale;
 
     float r     = length(uv);
@@ -24,10 +30,10 @@ void main() {
     float tightness = 4.5;
 
     // Mid energy adds a speed burst on top of base rotation
-    float speed = uv.y;
+    float speed = uv.y / scale;
 
     float spiral = mod(
-        angle + tightness * log(r + 0.001) - u_time * speed,
+        angle + tightness * log( (getFFTValue(r) + 0.001) / 2.0) - u_time * speed,
         2.0 * PI / arms
     );
 

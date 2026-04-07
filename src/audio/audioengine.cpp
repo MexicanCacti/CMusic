@@ -1,4 +1,4 @@
-#include "AudioEngine.h"
+#include "audioengine.h"
 
 
 AudioEngine::AudioEngine(QObject *parent)

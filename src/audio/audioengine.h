@@ -8,7 +8,7 @@
 #include <QAudioBufferOutput>
 #include <QFileInfo>
 #include <QMetaType>
-#include "../audio/audioanalyzer.h"
+#include "audioanalyzer.h"
 
 class AudioEngine : public QObject
 {

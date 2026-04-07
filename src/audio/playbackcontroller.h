@@ -5,7 +5,7 @@
 #include <QTimer>
 #include <QFileInfo>
 #include <QAudioBufferOutput>
-#include "../audio/audioengine.h"
+#include "audioengine.h"
 
 class PlaybackController : public QObject
 {

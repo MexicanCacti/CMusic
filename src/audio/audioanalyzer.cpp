@@ -1,4 +1,4 @@
-#include "AudioAnalyzer.h"
+#include "audioanalyzer.h"
 
 #include <QAudioFormat>
 #include <QtMath>

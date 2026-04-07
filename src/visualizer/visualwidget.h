@@ -7,7 +7,6 @@
 #include <QVector>
 #include <QTimer>
 #include <QOpenGLShaderProgram>
-#include <QTMath>
 #include <QFileDialog>
 #include <QElapsedTimer>
 #include <QDockWidget>
@@ -39,7 +38,7 @@ private:
     void initShader(QString vertShaderSource, QString fragShaderSource);
     void ensureDefaultData();
     const QString defaultVertShader = ":/resources/vertexShaders/default.vert";
-    const QString defaultFragShader = ":/resources/fragmentShaders/default02.frag";
+    const QString defaultFragShader = ":/resources/fragmentShaders/default03.frag";
     QString currentVertShader = defaultVertShader;
     QString currentFragShader = defaultFragShader;
     QOpenGLShaderProgram *shaderProgram;

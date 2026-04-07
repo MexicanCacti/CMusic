@@ -22,8 +22,8 @@
 #include <QMainWindow>
 
 
-#include "../visualizer/visualWidget.h"
-#include "../audio/playbackcontroller.h"
+#include "visualwidget.h"
+#include "playbackcontroller.h"
 
 class MusicPlayer : public QMainWindow
 {
@@ -53,6 +53,7 @@ private:
     void updateTrackDisplay(int seconds);
 
     QPushButton *loadButton;
+    QPushButton *visualizerShaderButton;
     QPushButton* refreshShaderButton;
     QPushButton *shaderButton;
     QPushButton *playButton;
